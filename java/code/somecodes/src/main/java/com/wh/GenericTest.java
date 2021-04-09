@@ -1,10 +1,68 @@
 package com.wh;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class GenericTest {
+    static <T> T add(T x, T y) {
+        return y;
+    }
+
+//    public static void fillNumberList(List<? super Number> list) {
+//        list.add(new Integer(0));
+//        list.add(new Float(1.0));
+//    }
+//    public static void fillNumberList(List<? extends Number> list) {
+//        list.add(new Integer(0));
+//        list.add(new Float(1.0));
+//    }
+//    public static void fillNumberList(List<?> list) {
+//        list.add(new Integer(0));//编译错误
+//        list.add(new Float(1.0));//编译错误
+//    }
     public static void main(String[] args) {
+
+
+        // List<?>和List<Object>之间的区别是什么?
+        List<?> listOfAnyType;
+        List<Object> listOfObject = new ArrayList<Object>();
+        List<String> listOfString = new ArrayList<String>();
+        List<Integer> listOfInteger = new ArrayList<Integer>();
+        listOfAnyType = listOfString; //legal
+        listOfAnyType = listOfInteger; //legal
+//        listOfObjectType = (List<Object>) listOfString; //compiler error - in-convertible type
+
+        // 泛型方法的类型推断
+        int i = GenericTest.add(1, 2); // 这两个参数都是Integer，所以T替换为Integer类型
+        Number f= GenericTest.add(1, 1.2); // 这两个参数一个是Integer，另一个是Float，所以取同一父类的最小级，为Number
+        Object o = GenericTest.add(1, "asd"); // 这两个参数一个是Integer，另一个是String，所以取同一父类的最小级，为Object
+
+        /**指定泛型的时候*/
+        int a = GenericTest.<Integer>add(1, 2);//指定了Integer，所以只能为Integer类型或者其子类
+//        int b = GenericTest.<Integer>add(1, 2.2);//编译错误，指定了Integer，不能为Float
+        Number c = GenericTest.<Number>add(1, 2.2); //指定为Number，所以可以为Integer和Float
+
+        int i1 = 1;
+//        String si1 = (String) i1; // cannot cast int to java.lang.String
+        List<Integer> li1 = new ArrayList<>();
+        li1.add(11);
+//        li1.add("aa"); // not allow
+        try {
+            // 利用反射突破泛型约束
+            li1.getClass().getMethod("add", Object.class)
+                    .invoke(li1, "aa");
+            for (Object obj : li1) {
+                System.out.println(obj);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+
         List l1 = new ArrayList(); // public class ArrayList<E>
         l1.add("aa"); // boolean add(E e);
         l1.add(11);
@@ -26,6 +84,9 @@ public class GenericTest {
         Class classStringArrayList = stringArrayList.getClass();
         Class classIntegerArrayList = integerArrayList.getClass();
         if(classStringArrayList.equals(classIntegerArrayList)){
+            System.out.println("泛型测试" + " 类型相同");
+        }
+        if(classStringArrayList == classIntegerArrayList) {
             System.out.println("泛型测试" + " 类型相同");
         }
 
@@ -98,12 +159,12 @@ public class GenericTest {
         List<String>[] ls1 = new ArrayList[10];
 
 //        List<String>[] lsa = new List<String>[10]; // Not really allowed.
-        Object o = ls1;
-        Object[] oa = (Object[]) o;
+        Object oo = ls1;
+        Object[] oa = (Object[]) oo;
         List<Integer> li = new ArrayList<Integer>();
         li.add(new Integer(3));
         oa[1] = li; // Unsound, but passes run time store check
-        String s = ls1[1].get(0); // Run-time error: ClassCastException.
+//        String s = ls1[1].get(0); // Run-time error: ClassCastException.
         // 这种情况下，由于JVM泛型的擦除机制，在运行时JVM是不知道泛型信息的，所以可以给oa[1]赋上一个ArrayList而不会出现异常，
         // 但是在取出数据的时候却要做一次类型转换，所以就会出现ClassCastException
 
